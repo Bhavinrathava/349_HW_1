@@ -1,6 +1,6 @@
 from node import Node
 import math
-
+from parse import parse
 def ID3(examples, default):
   '''
   Takes in an array of examples, and returns a tree (an instance of Node) 
@@ -8,7 +8,16 @@ def ID3(examples, default):
   and the target class variable is a special attribute with the name "Class".
   Any missing attributes are denoted with a value of "?"
   '''
+  TARGETCLASS = "Class"
+  #Parse Examples file and store the dictionary 
+  dataset = parse(examples)
 
+  #Attributes list 
+  attributes = list(dataset[0].keys())
+  attributes.remove(TARGETCLASS)
+  print(attributes)
+
+  
 
 def prune(node, examples):
   '''
