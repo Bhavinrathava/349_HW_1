@@ -17,7 +17,10 @@ def ID3(examples, default):
   attributes.remove(TARGETCLASS)
   print(attributes)
 
-  
+
+
+
+
 
 def prune(node, examples):
   '''
