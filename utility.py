@@ -14,7 +14,7 @@ def findEntropyGain(examples, attribute):
     
         # Find the entropy for this subset
         # weight this with len(sub) / len(data)
-        #add to the entropy after element
+        # add to the entropy after element
         afterEntropy += calculateEntropy(subset) *(len(subset) / len(examples))
 
     # Information gain = old - new entropy
