@@ -50,7 +50,6 @@ def getUniqueValuesForAttribute(examples, attribute):
     
     return uniqueValues
 
-
 #This function assesses the entropy on the passed dataset
 def calculateEntropy(examples):    
     TARGET = "Class"

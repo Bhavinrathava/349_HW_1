@@ -17,6 +17,9 @@ def ID3(examples, default):
   attributes = list(dataset[0].keys())
   attributes.remove(TARGETCLASS)
 
+  # Fix missing values 
+  
+
   #Call the recursive ID3 function to train on data
   return recID3(dataset, attributes)
 
@@ -57,6 +60,10 @@ def prune(node, examples):
   Takes in a trained tree and a validation set of examples.  Prunes nodes in order
   to improve accuracy on the validation data; the precise pruning strategy is up to you.
   '''
+
+
+
+  
 
 def test(node, examples):
   '''
