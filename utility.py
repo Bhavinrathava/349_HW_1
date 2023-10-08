@@ -50,6 +50,17 @@ def getUniqueValuesForAttribute(examples, attribute):
     
     return uniqueValues
 
+
+def removeMissingValues(examples):
+    atts = list(examples[0].keys())
+    for e in examples:
+        for a in atts:
+            if(e[a] == "?"):
+                e[a] ="n"
+
+    return examples
+
+
 #This function assesses the entropy on the passed dataset
 def calculateEntropy(examples):    
     TARGET = "Class"
@@ -67,7 +78,7 @@ def calculateEntropy(examples):
     total = len(examples)
     entropy = 0
 
-    for count in len(counts.keys()):
+    for count in list(counts.keys()):
         p = (counts[count] / total)
         entropy -= p * math.log2(p)
 

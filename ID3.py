@@ -2,6 +2,9 @@ from node import Node
 import math
 from parse import parse
 import utility
+import random
+import matplotlib.pyplot as plt 
+
 def ID3(examples, default):
   '''
   Takes in an array of examples, and returns a tree (an instance of Node) 
@@ -11,7 +14,7 @@ def ID3(examples, default):
   '''
   TARGETCLASS = "Class"
   #Parse Examples file and store the dictionary 
-  dataset = parse(examples)
+  dataset = examples
 
   #Attributes list 
   attributes = list(dataset[0].keys())
@@ -63,7 +66,7 @@ def prune(node, examples):
 
 
 
-  
+
 
 def test(node, examples):
   '''
@@ -90,3 +93,33 @@ def evaluate(node, example):
     else:
       valueToLookFor = example[node.attribute]
       node = node.children[valueToLookFor]
+
+
+def generateTrainingGraph(examples):
+  # We need to take incremental Training samples from data set 
+  testDataset = examples[:int(len(examples)/5)]
+  examples = examples[int(len(examples)/5):]
+  
+  print(len(examples))
+  numberTrainingSamples = range(10, len(examples), 5)
+  
+  Accuracies = []
+
+  for numSamples in numberTrainingSamples:
+    subset = [examples[i] for i in random.sample(range(len(examples)), numSamples)]
+    
+    trainedNode = ID3(subset, 0)
+    Accuracies.append(test(trainedNode, [random.choice(testDataset) for _ in range(100)]))
+  print(Accuracies)
+  print(numberTrainingSamples)
+  plt.plot(numberTrainingSamples, Accuracies)
+  plt.plot()
+  plt.xlabel('Number of Training Samples') 
+  plt.ylabel('Accuracy') 
+  plt.title('Training Samples Size Vs Accuracy') 
+  plt.show() 
+
+if __name__ == "__main__":
+  examples = parse("house_votes_84.data")
+  examples = utility.removeMissingValues(examples)
+  generateTrainingGraph(examples)
