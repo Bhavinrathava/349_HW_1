@@ -1,0 +1,93 @@
+# code for splitting the data
+import random
+from collections import defaultdict
+from node import Node
+import utility
+from parse import parse
+import ID3
+
+
+def split_data(data, train_ratio=0.7, val_ratio=0.15, test_ratio=0.15):
+    
+    # Ensure that the ratios add up to 1
+    if train_ratio + val_ratio + test_ratio != 1.0:
+        raise ValueError("Ratios must add up to 1.0")
+
+    # Shuffle the data
+    random.shuffle(data)
+
+    # Calculate split indices
+    train_split = int(train_ratio * len(data))
+    val_split = int((train_ratio + val_ratio) * len(data))
+
+    # Split the data
+    train_data = data[:train_split]
+    val_data = data[train_split:val_split]
+    test_data = data[val_split:]
+
+    return train_data, val_data, test_data
+
+
+# dtermining the majority class for the leaf node to be used in pruning function
+def majority_class(examples):
+    class_counts = defaultdict(int)
+    for example in examples:
+        class_counts[example["class"]] += 1
+    return max(class_counts, key = class_counts.get)
+
+# function to get tree nodes in post order, because the error reduction pruning methode
+# starts from the a lower sub tree
+def post_order(node):
+    nodes = []
+    if node is not None:
+        for child in node.children.values():
+            nodes.extend(post_order(child))
+        nodes.append(node)
+    return nodes
+
+
+# test function for checking accuracy 
+def test(tree, examples):
+    correct_predictions = 0
+    for example in examples:
+        if ID3.evaluate(tree, example) == example["Class"]:
+            correct_predictions += 1
+        return correct_predictions/len(examples)
+
+# Reduced Error Pruning function
+
+def reduced_error_pruning(tree, validation_set):
+
+    # get all nodes in post order from the tree
+    nodes = post_order(tree)
+
+    for node in nodes:
+        if not node.is_leaf():
+            # storing the current stae in case of reversal 
+            original_children = node.children
+            original_attribute = node.attribute
+
+            #prune the node and replace it with majority class
+            majority_class = majority_class(node.examples)
+            node.children = {}
+            node.label = majority_class
+            node.attribute = None 
+
+            # testing accuracy on validation set
+            pruned_accuracy = test(tree, validation_set)
+            original_accuracy = test(original_tree, validation_set)
+
+            # Reverting pruning if accuracy drops
+            if pruned_accuracy < original_accuracy:
+                node.children = original_children
+                node.label = None
+                node.attribute = original_attribute
+
+
+
+data = parse(examples)
+training_data, validation_data, test_data = split_data(data)
+original_tree = ID3.ID3(training_data)
+tree = ID3.ID3(validation_data)
+reduced_error_pruning(tree, validation_data)
+
