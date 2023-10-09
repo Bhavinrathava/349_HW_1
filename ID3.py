@@ -5,67 +5,107 @@ import utility
 import random
 import matplotlib.pyplot as plt 
 
+
+
+def impute_missing_value(dataset):
+    attributes = list(dataset[0].keys())
+    attributes.remove("Class")
+
+    for attribute in attributes:
+        # Get the values for the attribute.
+        attribute_values = [example[attribute] for example in dataset]
+        # Find the mode for non-missing values.
+        non_missing_values = [value for value in attribute_values if value is not None and value != "?"]
+        mode = max(set(non_missing_values), key=non_missing_values.count)
+
+        # Update missing values in the dataset with the mode.
+        for example in dataset:
+            if example[attribute] is None or example[attribute] == "?":
+                example[attribute] = mode
+
+    return dataset
+
+
+
 def ID3(examples, default):
   '''
   Takes in an array of examples, and returns a tree (an instance of Node) 
-  trained on the examples.  Each example is a dictionary of attribute:value pairs,
+  trained on the examples. Each example is a dictionary of attribute:value pairs,
   and the target class variable is a special attribute with the name "Class".
   Any missing attributes are denoted with a value of "?"
   '''
   TARGETCLASS = "Class"
   #Parse Examples file and store the dictionary 
   dataset = examples
-
   #Attributes list 
   attributes = list(dataset[0].keys())
   attributes.remove(TARGETCLASS)
 
-  # Fix missing values 
-  
+  # Fix missing values
+  dataset = impute_missing_value(dataset)
 
   #Call the recursive ID3 function to train on data
   return recID3(dataset, attributes)
 
+
 def recID3(examples, attributes):
 
+    # Check for base cases
+    if len(examples) == 1 or len(utility.getUniqueValuesForAttribute(examples, "Class")) == 1:
+        return Node(label=examples[0]["Class"])
 
-  # Check for base cases
-  if(len(examples) == 1 or len(utility.getUniqueValuesForAttribute(examples, "Class")) == 1):
-    return Node(label = examples[0]["Class"])
+    node = Node()
 
-  node = Node()
+    # Find the best attribute
+    bestAttributeName = utility.findBestAttribute(examples, attributes)
+    
+    # Check if bestAttributeName is in attributes list before removal
+    if bestAttributeName in attributes:
+        uniqueAttributeValues = utility.getUniqueValuesForAttribute(examples, bestAttributeName)
+        node.attribute = bestAttributeName
 
-  #Find the best attribute 
-  bestAttributeName = utility.findBestAttribute(examples, attributes)
-  uniqueAttributeValues = utility.getUniqueValuesForAttribute(examples, bestAttributeName)
-  node.attribute = bestAttributeName
+        # Get the remaining Attributes
+        newAttributes = attributes[:]
+        newAttributes.remove(bestAttributeName)
 
-  #Get the remaining Atrributes
-  newAttributes = attributes[:]
-  newAttributes.remove(bestAttributeName)
+        # For each value of this best attribute:
+        for value in uniqueAttributeValues:
+            # Get subset of the dataset where all entries of attribute have the same value
+            subDataset = utility.getDataWithAttValue(examples, bestAttributeName, value)
 
-  #For each value of this best attrbiute :
-  for value in uniqueAttributeValues:
+            # Call ID3 recursive function with subset data and find the best attribute in this subtree
+            node.children[value] = recID3(subDataset, newAttributes)
 
-    #Get subset if the dataset where all entries of attribute has the same value
-    subDataset = utility.getDataWithAttValue(examples, bestAttributeName,value)
-
-    #call ID3 recursive function with subset data and find best attribue in this subtree
-    node.children[value] = recID3(subDataset, newAttributes)
-
-  return node
+    return node
 
 
 
+def prune(node, examples, critical_value=0.5):
 
-def prune(node, examples):
-  '''
-  Takes in a trained tree and a validation set of examples.  Prunes nodes in order
+  """
+  Takes in a trained tree and a validation set of examples. Prunes nodes in order
   to improve accuracy on the validation data; the precise pruning strategy is up to you.
-  '''
 
+  Args:
+    node: The tree node to prune.
+    examples: The validation set of examples.
+    critical_value: The critical value used to prune nodes.
 
+  Returns:
+    The pruned tree node.
+  """
 
+  # Calculate the accuracy of the current node on the validation data.
+  accuracy = test(node, examples)
+
+  # Prune the node if its accuracy is below the critical value and it is not a leaf node.
+  if accuracy < critical_value and node.children:
+    node.label = None
+    for child in node.children.values():
+      prune(child, examples, critical_value)
+
+  # Return the pruned node.
+  return node
 
 
 def test(node, examples):
@@ -80,19 +120,17 @@ def test(node, examples):
 
   return result / len(examples)
 
-def evaluate(node, example):
-  '''
-  Takes in a tree and one example.  Returns the Class value that the tree
-  assigns to the example.
-  '''
-  while(node):
-  
-    if(node.label is not None):
-      return node.label
 
-    else:
-      valueToLookFor = example[node.attribute]
-      node = node.children[valueToLookFor]
+def evaluate(node, example):
+    while node:
+        if node.label is not None:
+            return node.label
+        elif node.attribute is not None:
+            valueToLookFor = example[node.attribute]
+            node = node.children[valueToLookFor]
+        else:
+            return None  # Handle leaf nodes with no attribute
+
 
 
 def generateTrainingGraph(examples):
@@ -102,24 +140,38 @@ def generateTrainingGraph(examples):
   
   print(len(examples))
   numberTrainingSamples = range(10, len(examples), 5)
-  
-  Accuracies = []
+
+  accuraciesNoPruning = []
+  accuraciesPruning = []
 
   for numSamples in numberTrainingSamples:
     subset = [examples[i] for i in random.sample(range(len(examples)), numSamples)]
-    
-    trainedNode = ID3(subset, 0)
-    Accuracies.append(test(trainedNode, [random.choice(testDataset) for _ in range(100)]))
-  print(Accuracies)
+
+    # Train a tree without pruning
+    trainedNodeNoPruning = ID3(subset, 0)
+    accuraciesNoPruning.append(test(trainedNodeNoPruning, [random.choice(testDataset) for _ in range(100)]))
+
+    # Train a tree with pruning
+    trainedNodePruning = ID3(subset, 0)
+    trainedNodePruning = prune(trainedNodePruning, testDataset)
+    accuraciesPruning.append(test(trainedNodePruning, [random.choice(testDataset) for _ in range(100)]))
+
+  print(accuraciesNoPruning)
+  print(accuraciesPruning)
   print(numberTrainingSamples)
-  plt.plot(numberTrainingSamples, Accuracies)
-  plt.plot()
-  plt.xlabel('Number of Training Samples') 
-  plt.ylabel('Accuracy') 
-  plt.title('Training Samples Size Vs Accuracy') 
-  plt.show() 
+
+  # Plot the graphs
+  plt.figure(figsize=(10, 6))
+  plt.plot(numberTrainingSamples, accuraciesNoPruning, label="No Pruning")
+  plt.plot(numberTrainingSamples, accuraciesPruning, label="Pruning")
+  plt.xlabel('Number of Training Samples')
+  plt.ylabel('Accuracy')
+  plt.title('Training Samples Size Vs Accuracy')
+  plt.legend()
+  plt.show()
 
 if __name__ == "__main__":
   examples = parse("house_votes_84.data")
-  examples = utility.removeMissingValues(examples)
+  examples = impute_missing_value(examples)
+  # examples = utility.removeMissingValues(examples)
   generateTrainingGraph(examples)

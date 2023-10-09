@@ -45,7 +45,7 @@ def getDataWithAttValue(examples, attribute, value):
 def getUniqueValuesForAttribute(examples, attribute):
     uniqueValues = []
     for ex in examples:
-        if(ex[attribute] not in uniqueValues):
+        if attribute in ex and ex[attribute] not in uniqueValues:
             uniqueValues.append(ex[attribute])
     
     return uniqueValues
