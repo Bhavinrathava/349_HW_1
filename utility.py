@@ -84,6 +84,4 @@ def calculateEntropy(examples):
 
     return entropy
 
-
-
  

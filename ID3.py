@@ -26,7 +26,6 @@ def impute_missing_value(dataset):
     return dataset
 
 
-
 def ID3(examples, default):
   '''
   Takes in an array of examples, and returns a tree (an instance of Node) 
@@ -46,14 +45,19 @@ def ID3(examples, default):
 
   #Call the recursive ID3 function to train on data
   return recID3(dataset, attributes)
-
+    
 
 def recID3(examples, attributes):
 
-    # Check for base cases
-    if len(examples) == 1 or len(utility.getUniqueValuesForAttribute(examples, "Class")) == 1:
-        return Node(label=examples[0]["Class"])
-
+  # Check for base cases
+  if len(examples) == 0:
+     tree = Node()
+     return tree
+    
+  if len(examples) == 1 or len(utility.getUniqueValuesForAttribute(examples, "Class")) == 1:
+      return Node(label=examples[0]["Class"])
+  
+  else:
     node = Node()
 
     # Find the best attribute
@@ -79,33 +83,56 @@ def recID3(examples, attributes):
     return node
 
 
+def prune(node, examples):
+    if node.label is not None:
+        return node
 
-def prune(node, examples, critical_value=0.5):
+    # Make a copy of the current tree
+    tree_copy = Node(label=node.label, attribute=node.attribute)
+    tree_copy.children = node.children.copy()
 
-  """
-  Takes in a trained tree and a validation set of examples. Prunes nodes in order
-  to improve accuracy on the validation data; the precise pruning strategy is up to you.
+    # Initialize the number of errors with the current tree
+    current_errors = len([example for example in examples if evaluate(node, example) != example["Class"]])
 
-  Args:
-    node: The tree node to prune.
-    examples: The validation set of examples.
-    critical_value: The critical value used to prune nodes.
+    # Recursively prune the children
+    for value in node.children:
+        tree_copy.children[value] = prune(node.children[value], examples)
 
-  Returns:
-    The pruned tree node.
-  """
+    # Calculate the errors after pruning
+    pruned_errors = len([example for example in examples if evaluate(tree_copy, example) != example["Class"]])
 
-  # Calculate the accuracy of the current node on the validation data.
-  accuracy = test(node, examples)
+    # If pruning reduces errors, return the pruned tree; otherwise, return the original tree
+    if pruned_errors <= current_errors:
+        return tree_copy
+    else:
+        return node
 
-  # Prune the node if its accuracy is below the critical value and it is not a leaf node.
-  if accuracy < critical_value and node.children:
-    node.label = None
-    for child in node.children.values():
-      prune(child, examples, critical_value)
+# def prune(node, examples, critical_value=0.5):
 
-  # Return the pruned node.
-  return node
+#   """
+#   Takes in a trained tree and a validation set of examples. Prunes nodes in order
+#   to improve accuracy on the validation data; the precise pruning strategy is up to you.
+
+#   Args:
+#     node: The tree node to prune.
+#     examples: The validation set of examples.
+#     critical_value: The critical value used to prune nodes.
+
+#   Returns:
+#     The pruned tree node.
+#   """
+
+#   # Calculate the accuracy of the current node on the validation data.
+#   accuracy = test(node, examples)
+
+#   # Prune the node if its accuracy is below the critical value and it is not a leaf node.
+#   if accuracy < critical_value and node.children:
+#     node.label = None
+#     for child in node.children.values():
+#       prune(child, examples, critical_value)
+
+#   # Return the pruned node.
+#   return node
 
 
 def test(node, examples):
