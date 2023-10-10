@@ -128,8 +128,9 @@ def prune(node, examples, critical_value=0.5):
   # Prune the node if its accuracy is below the critical value and it is not a leaf node.
   if accuracy < critical_value and node.children:
     node.label = None
-    for child in node.children.values():
-      prune(child, examples, critical_value)
+    for attVal,child in node.children.items():
+      # Need to pass on the specific node wise dataset for accuracy prediction
+      prune(child, utility.getDataWithAttValue(examples, node.attribute, attVal), critical_value)
 
   # Return the pruned node.
   return node
