@@ -167,7 +167,6 @@ def generateTrainingGraph(examples):
   testDataset = examples[:int(len(examples)/5)]
   examples = examples[int(len(examples)/5):]
   
-  print(len(examples))
   numberTrainingSamples = range(10, len(examples), 5)
 
   accuraciesNoPruning = []
