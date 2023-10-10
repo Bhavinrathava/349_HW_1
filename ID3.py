@@ -83,59 +83,60 @@ def recID3(examples, attributes):
     return node
 
 
-def prune(node, examples):
-    if node.label is not None:
-        return node
+# def prune(node, examples):
+#     if node.label is not None:
+#         return node
 
-    # Make a copy of the current tree
-    tree_copy = Node(label=node.label, attribute=node.attribute)
-    tree_copy.children = node.children.copy()
+#     # Make a copy of the current tree
+#     tree_copy = Node(label=node.label, attribute=node.attribute)
+#     tree_copy.children = node.children.copy()
 
-    # Initialize the number of errors with the current tree
-    current_errors = len([example for example in examples if evaluate(node, example) != example["Class"]])
+#     # Initialize the number of errors with the current tree
+#     current_errors = len([example for example in examples if evaluate(node, example) != example["Class"]])
 
-    # Recursively prune the children
-    for value in node.children:
-        tree_copy.children[value] = prune(node.children[value], examples)
+#     # Recursively prune the children
+#     for value in node.children:
+#         tree_copy.children[value] = prune(node.children[value], examples)
 
-    # Calculate the errors after pruning
-    pruned_errors = len([example for example in examples if evaluate(tree_copy, example) != example["Class"]])
+#     # Calculate the errors after pruning
+#     pruned_errors = len([example for example in examples if evaluate(tree_copy, example) != example["Class"]])
 
-    # If pruning reduces errors, return the pruned tree; otherwise, return the original tree
-    if pruned_errors <= current_errors:
-        return tree_copy
-    else:
-        return node
+#     # If pruning reduces errors, return the pruned tree; otherwise, return the original tree
+#     if pruned_errors <= current_errors:
+#         return tree_copy
+#     else:
+#         return node
 
-# def prune(node, examples, critical_value=0.5):
+def prune(node, examples, critical_value=0.5):
 
-#   """
-#   Takes in a trained tree and a validation set of examples. Prunes nodes in order
-#   to improve accuracy on the validation data; the precise pruning strategy is up to you.
+  """
+  Takes in a trained tree and a validation set of examples. Prunes nodes in order
+  to improve accuracy on the validation data; the precise pruning strategy is up to you.
 
-#   Args:
-#     node: The tree node to prune.
-#     examples: The validation set of examples.
-#     critical_value: The critical value used to prune nodes.
+  Args:
+    node: The tree node to prune.
+    examples: The validation set of examples.
+    critical_value: The critical value used to prune nodes.
 
-#   Returns:
-#     The pruned tree node.
-#   """
+  Returns:
+    The pruned tree node.
+  """
 
-#   # Calculate the accuracy of the current node on the validation data.
-#   accuracy = test(node, examples)
+  # Calculate the accuracy of the current node on the validation data.
+  accuracy = test(node, examples)
 
-#   # Prune the node if its accuracy is below the critical value and it is not a leaf node.
-#   if accuracy < critical_value and node.children:
-#     node.label = None
-#     for child in node.children.values():
-#       prune(child, examples, critical_value)
+  # Prune the node if its accuracy is below the critical value and it is not a leaf node.
+  if accuracy < critical_value and node.children:
+    node.label = None
+    for child in node.children.values():
+      prune(child, examples, critical_value)
 
-#   # Return the pruned node.
-#   return node
+  # Return the pruned node.
+  return node
 
 
 def test(node, examples):
+  examples = impute_missing_value(examples)
   '''
   Takes in a trained tree and a test set of examples.  Returns the accuracy (fraction
   of examples the tree classifies correctly).
@@ -201,4 +202,5 @@ if __name__ == "__main__":
   examples = parse("house_votes_84.data")
   examples = impute_missing_value(examples)
   # examples = utility.removeMissingValues(examples)
+
   generateTrainingGraph(examples)
