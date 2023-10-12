@@ -147,7 +147,8 @@ def test(node, examples):
   for example in examples:
     result += (evaluate(node, example) == example["Class"] * 1)
 
-  return result / len(examples)
+  acc =  result / len(examples)
+  return acc
 
 
 def evaluate(node, example):
@@ -163,35 +164,35 @@ def evaluate(node, example):
 
 
 def generateTrainingGraph(examples):
-  # We need to take incremental Training samples from data set 
-  testDataset = examples[:int(len(examples)/5)]
-  examples = examples[int(len(examples)/5):]
   
-  numberTrainingSamples = range(10, len(examples), 5)
+  sampleSize = range(10, 300, 3)
+  noPruneAcc = []
+  pruneAcc = []
 
-  accuraciesNoPruning = []
-  accuraciesPruning = []
+  for currentSampleSize in sampleSize:
+    random.shuffle(examples)
 
-  for numSamples in numberTrainingSamples:
-    subset = [examples[i] for i in random.sample(range(len(examples)), numSamples)]
+    data = examples[:currentSampleSize]
+    
+    testDataset = examples[currentSampleSize:]
 
-    # Train a tree without pruning
-    trainedNodeNoPruning = ID3(subset, 0)
-    accuraciesNoPruning.append(test(trainedNodeNoPruning, [random.choice(testDataset) for _ in range(100)]))
+    validationDataset = testDataset[:(len(testDataset)*3)//4 ]
 
-    # Train a tree with pruning
-    trainedNodePruning = ID3(subset, 0)
-    trainedNodePruning = prune(trainedNodePruning, testDataset)
-    accuraciesPruning.append(test(trainedNodePruning, [random.choice(testDataset) for _ in range(100)]))
+    forTest = testDataset[(len(testDataset)*3)//4:]
+    hundredTests = [random.choice(forTest) for _ in range(101)]
 
-  print(accuraciesNoPruning)
-  print(accuraciesPruning)
-  print(numberTrainingSamples)
+    tree = ID3(data, 'democrat')
+    acc = test(tree, hundredTests)
+    noPruneAcc.append(acc)
+
+    prunedTree = prune(tree, validationDataset, critical_value=0.8)
+    acc = test(prunedTree, hundredTests)
+    pruneAcc.append(acc)
 
   # Plot the graphs
   plt.figure(figsize=(10, 6))
-  plt.plot(numberTrainingSamples, accuraciesNoPruning, label="No Pruning")
-  plt.plot(numberTrainingSamples, accuraciesPruning, label="Pruning")
+  plt.plot(sampleSize, noPruneAcc, label="No Pruning")
+  plt.plot(sampleSize, pruneAcc, label="Pruning")
   plt.xlabel('Number of Training Samples')
   plt.ylabel('Accuracy')
   plt.title('Training Samples Size Vs Accuracy')
